@@ -38,7 +38,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install
+          npm install --legacy-peer-deps
 
       - name: Cache Gradle Wrapper
         uses: actions/cache@v2
@@ -93,6 +93,15 @@ jobs:
 
             https://github.com/lnreader/lnreader/compare/${{ env.PREV_RELEASE_SHA }}...${{ env.CURRENT_SHA }}
 
+            ${{ env.COMMIT_LOGS }}
+
+            ---
+
+            ### Checksums
+
+            | Variant | SHA-256 |
+            | ------- | ------- |
+            | Universal | ${{ env.APK_UNIVERSAL_SHA }} |
           files: |
             LNReader-r${{ env.COMMIT_COUNT }}.apk
           draft: ${{ github.event.inputs.dry-run != '' }}
