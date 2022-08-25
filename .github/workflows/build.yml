@@ -1,6 +1,10 @@
 name: Build job
 
 on:
+  # Every Saturday at 16:00 UTC-5
+  schedule:
+    - cron: '0 21 * * 0,3'
+  # Manual triggers
   workflow_dispatch:
     inputs:
       git-ref:
