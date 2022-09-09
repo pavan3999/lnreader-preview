@@ -84,11 +84,13 @@ jobs:
 
       - name: Build Android Release
         run: |
-          cd android && ./gradlew assembleRelease -PenableSeparateBuildPerCPUArchitecture --no-daemon
+          cd android && ./gradlew assembleRelease -PenableSeparateBuildPerCPUArchitecture
+
+      - name: ls | cat -n
+        run: cd android/app/build/outputs/apk/release && ls | cat -n
 
       - name: Clean up build artifacts
         run: |
-          cd android/app/build/outputs/apk/release && ls | cat -n && cd ~
           set -e
 
           cp android/app/build/outputs/apk/release/app-release.apk LNReader-r${{ env.COMMIT_COUNT }}.apk
