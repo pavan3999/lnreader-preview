@@ -56,7 +56,7 @@ jobs:
 
       - name: Install compatible Worklets version
         run: |
-          npm install @shopify/react-native-worklets-core@^0.7.0 --legacy-peer-deps
+          npm install react-native-worklets-core@^0.7.0 --legacy-peer-deps
 
       - name: Cache Gradle Wrapper
         uses: actions/cache@v3
