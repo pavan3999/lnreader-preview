@@ -59,13 +59,13 @@ jobs:
           npm install react-native-worklets@^0.7.0 --legacy-peer-deps
 
       - name: Cache Gradle Wrapper
-        uses: actions/cache@v6
+        uses: actions/cache@v5
         with:
           path: ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
 
       - name: Cache Gradle Dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@v5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-caches-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
