@@ -19,25 +19,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone Repository (Latest)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           repository: "lnreader/lnreader"
           fetch-depth: 0
         if: github.event.inputs.git-ref == ''
       - name: Clone Repository (Custom Ref)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         if: github.event.inputs.git-ref != ''
         with:
           repository: "lnreader/lnreader"
           fetch-depth: 0
           ref: ${{ github.event.inputs.git-ref }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -59,13 +59,13 @@ jobs:
           npm install react-native-worklets@^0.7.0 --legacy-peer-deps
 
       - name: Cache Gradle Wrapper
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
 
       - name: Cache Gradle Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-caches-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
