@@ -1,7 +1,7 @@
 name: Build job
 
 on:
-  # Every Saturday at 16:00 UTC-5
+  # Every Wednesday and Sunday at 16:00 UTC-5
   schedule:
     - cron: '0 21 * * 0,3'
   # Manual triggers
@@ -24,6 +24,7 @@ jobs:
           repository: "lnreader/lnreader"
           fetch-depth: 0
         if: github.event.inputs.git-ref == ''
+
       - name: Clone Repository (Custom Ref)
         uses: actions/checkout@v6
         if: github.event.inputs.git-ref != ''
@@ -32,15 +33,28 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.inputs.git-ref }}
 
-      - uses: actions/setup-node@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm Store Directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm Cache
+        uses: actions/cache@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Get previous release
         id: last_release
@@ -50,32 +64,7 @@ jobs:
           exclude_types: "draft|prerelease"
           view_top: 1
 
-      - name: Install Dependencies
-        run: |
-          npm install --legacy-peer-deps
-
-      - name: Install compatible Worklets version
-        run: |
-          npm install react-native-worklets@^0.7.0 --legacy-peer-deps
-
-      - name: Cache Gradle Wrapper
-        uses: actions/cache@v5
-        with:
-          path: ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
-
-      - name: Cache Gradle Dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-caches-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-caches-
-
-      - name: Make Gradlew Executable
-        run: cd android && chmod +x ./gradlew
-
-      - name: Prepare build
+      - name: Prepare build metadata
         run: |
           set -e
 
@@ -96,16 +85,30 @@ jobs:
             | jq -r '.[]|"- \(.message | first) (@\(.username))"')
           {delimiter}" >> $GITHUB_ENV
 
-      - name: Build Android Release
+      - name: Generate Environment Variables
         run: |
-          cd android && ./gradlew assembleRelease --no-daemon --info
+          pnpm generate:env:release \
+            --build-type "Github Action" \
+            --node-env "production"
+
+      - name: Build Android Release with Rock
+        uses: callstackincubator/android@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        with:
+          re-sign: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          variant: release
 
       - name: Clean up build artifacts
         run: |
           set -e
 
-          cp android/app/build/outputs/apk/release/app-release.apk LNReader-r${{ env.COMMIT_COUNT }}.apk
-          sha=`sha256sum LNReader-r${{ env.COMMIT_COUNT }}.apk | awk '{ print $1 }'`
+          cp android/app/build/outputs/apk/release/app-release.apk \
+            LNReader-r${{ env.COMMIT_COUNT }}.apk
+          sha=$(sha256sum LNReader-r${{ env.COMMIT_COUNT }}.apk | awk '{ print $1 }')
           echo "APK_UNIVERSAL_SHA=$sha" >> $GITHUB_ENV
 
       - name: Create release
@@ -127,8 +130,7 @@ jobs:
             | Variant | SHA-256 |
             | ------- | ------- |
             | Universal | ${{ env.APK_UNIVERSAL_SHA }} |
-          files: |
-            LNReader-r${{ env.COMMIT_COUNT }}.apk
+          files: LNReader-r${{ env.COMMIT_COUNT }}.apk
           draft: ${{ github.event.inputs.dry-run != '' }}
           prerelease: false
         env:
