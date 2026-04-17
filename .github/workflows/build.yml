@@ -91,6 +91,15 @@ jobs:
             --build-type "Github Action" \
             --node-env "production"
 
+      - name: Pre-install NDK (with retry)
+        run: |
+          for i in 1 2 3; do
+            $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+              "ndk;27.1.12297006" && break
+            echo "Attempt $i failed, retrying..."
+            sleep 10
+          done
+
       - name: Build Android Release with Rock
         uses: callstackincubator/android@v3
         env:
