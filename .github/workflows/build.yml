@@ -46,6 +46,9 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.inputs.git-ref }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -58,9 +61,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
 
       - name: Get pnpm Store Directory
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
