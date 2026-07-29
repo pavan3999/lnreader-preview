@@ -92,7 +92,7 @@ jobs:
 
           echo "Found preview tag: $TAG"
 
-          echo "tag_name=${TAG:-r0}" >> "$GITHUB_OUTPUT""
+          echo "tag_name=${TAG:-r0}" >> "$GITHUB_OUTPUT"
 
       - name: Debug previous release
         run: |
