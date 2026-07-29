@@ -84,9 +84,10 @@ jobs:
           TAG=$(gh release list \
             --exclude-drafts \
             --exclude-pre-releases \
-            --limit 1 \
+            --limit 100 \
             --json tagName \
-            --jq '.[0].tagName')
+            --jq '[.[].tagName | select(test("^r[0-9]+$"))][0]'
+          )
 
           echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
 
