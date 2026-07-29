@@ -76,6 +76,15 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
 
+      - name: Configure Release Environment
+        env:
+          MYANIMELIST_CLIENT_ID: ${{ vars.MYANIMELIST_CLIENT_ID }}
+          ANILIST_CLIENT_ID: ${{ vars.ANILIST_CLIENT_ID }}
+        run: |
+          pnpm generate:env:release \
+            --build-type "GitHub Action" \
+            --node-env "production"
+
       - name: Get previous release
         id: last_release
         env:
