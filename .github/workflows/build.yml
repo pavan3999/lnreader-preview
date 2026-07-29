@@ -154,6 +154,21 @@ jobs:
             -PreleaseAbiSplits=true \
             --stacktrace
 
+      - name: Verify APK Signatures
+        run: |
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner |
+            sort -V |
+            tail -1)"
+
+          if [ -z "$APKSIGNER" ]; then
+            echo "Android apksigner was not found"
+            exit 1
+          fi
+
+          for APK in android/app/build/outputs/apk/release/*.apk; do
+            "$APKSIGNER" verify "$APK"
+          done
+
       - name: Rename & checksum APK
         run: |
           set -e
