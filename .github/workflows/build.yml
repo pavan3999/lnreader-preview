@@ -118,17 +118,6 @@ jobs:
             | jq -r '.[] | "- \(.message | first) (@\(.username))"' >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
 
-      - name: Configure Release Environment
-        env:
-          MYANIMELIST_CLIENT_ID: ${{ vars.MYANIMELIST_CLIENT_ID }}
-          ANILIST_CLIENT_ID: ${{ vars.ANILIST_CLIENT_ID }}
-        run: |
-          pnpm generate:env:release \
-            --build-type "Release" \
-            --node-env "production" \
-            --myanimelist-client-id "$MYANIMELIST_CLIENT_ID" \
-            --anilist-client-id "$ANILIST_CLIENT_ID"
-
       - name: Generate Native Android Project
         run: |
           pnpm exec expo prebuild \
