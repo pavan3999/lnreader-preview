@@ -38,6 +38,14 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Set Up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -54,7 +62,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Get previous release
         id: last_release
@@ -92,31 +100,41 @@ jobs:
             | jq -r '.[] | "- \(.message | first) (@\(.username))"' >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
 
-      - name: Generate Environment Variables
+      - name: Configure Release Environment
+        env:
+          MYANIMELIST_CLIENT_ID: ${{ vars.MYANIMELIST_CLIENT_ID }}
+          ANILIST_CLIENT_ID: ${{ vars.ANILIST_CLIENT_ID }}
         run: |
           pnpm generate:env:release \
-            --build-type "Github Action" \
-            --node-env "production"
+            --build-type "Release" \
+            --node-env "production" \
+            --myanimelist-client-id "$MYANIMELIST_CLIENT_ID" \
+            --anilist-client-id "$ANILIST_CLIENT_ID"
 
-      - name: Pre-install NDK (with retry)
+      - name: Generate Native Android Project
         run: |
-          for i in 1 2 3; do
-            "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
-              "ndk;27.1.12297006" && break
-            echo "Attempt $i failed, retrying..."
-            sleep 10
-          done
+          pnpm exec expo prebuild \
+            --platform android \
+            --clean \
+            --no-install
 
-      - name: Build Android Release with Rock (arm64 only)
-        uses: callstackincubator/android@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO_OWNER: ${{ github.repository_owner }}
-          REPO_NAME: ${{ github.event.repository.name }}
+      - name: Configure Gradle
+        uses: gradle/actions/setup-gradle@v6
         with:
-          re-sign: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          variant: release
+          cache-provider: enhanced
+          cache-cleanup: on-success
+          add-job-summary: always
+
+      - name: Build Release APKs
+        working-directory: android
+        run: |
+          mkdir -p app/build/intermediates/sourcemaps/react/release
+
+          ./gradlew :app:assembleRelease \
+            --build-cache \
+            --parallel \
+            -PreleaseAbiSplits=true \
+            --stacktrace
 
       - name: Rename & checksum APK
         run: |
