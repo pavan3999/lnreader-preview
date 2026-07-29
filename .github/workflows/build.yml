@@ -34,25 +34,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.inputs.git-ref }}
 
-      - name: Enable arm64-only ABI split
-        run: |
-          if ! grep -q 'include "arm64-v8a"' android/app/build.gradle; then
-            awk '
-            /buildTypes {/ && !x {
-              print "    splits {"
-              print "        abi {"
-              print "            enable true"
-              print "            reset()"
-              print "            include \"arm64-v8a\""
-              print "            universalApk false"
-              print "        }"
-              print "    }"
-              x=1
-            }
-            { print }
-            ' android/app/build.gradle > tmp && mv tmp android/app/build.gradle
-          fi
-
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
